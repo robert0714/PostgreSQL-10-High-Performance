@@ -1,5 +1,5 @@
 # Logical Replication
-## WeConsole
+## WebConsole
 
 ```bash
 docker pull dpage/pgadmin4
