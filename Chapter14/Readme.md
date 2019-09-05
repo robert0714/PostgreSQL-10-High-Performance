@@ -34,13 +34,12 @@ postgres=# \list
 postgres=# \connect db1
 You are now connected to database "db1" as user "postgres".
 db1=# 
-
 db1# create ROLE replicator REPLICATION LOGIN PASSWORD 'linux';
 CREATE ROLE
-db1=# grant ALL ON mynames to replicator;
-GRANT
 db1=# create table mynames (id int not null primary key, name text);
 CREATE TABLE
+db1=# grant ALL ON mynames to replicator;
+GRANT
 
 ```
 
@@ -71,7 +70,7 @@ You are now connected to database "db2" as user "postgres".
 db2=# 
 db2=# create table mynames (id int not null primary key, name text);
 CREATE TABLE
-db2=# create subscription mynames_sub CONNECTION 'dbname=db1 host=node1 user=replicator password=password' PUBLICATION mynames_pub;
+db2=# create subscription mynames_sub CONNECTION 'dbname=db1 host=node1 user=replicator password=linux' PUBLICATION mynames_pub;
 CREATE SUBSCRIPTION
 ```
 
