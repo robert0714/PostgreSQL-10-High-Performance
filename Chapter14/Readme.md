@@ -34,13 +34,18 @@ postgres=# \list
 postgres=# \connect db1
 You are now connected to database "db1" as user "postgres".
 db1=# 
+db1=# show wal_level;
+wal_level
+-----------
+logical
 db1# create ROLE replicator REPLICATION LOGIN PASSWORD 'linux';
 CREATE ROLE
 db1=# create table mynames (id int not null primary key, name text);
 CREATE TABLE
 db1=# grant ALL ON mynames to replicator;
 GRANT
-
+db1=# create publication mynames_pub for table mynames;
+CREATE PUBLICATION
 ```
 
 # Node2
