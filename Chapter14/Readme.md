@@ -1,4 +1,14 @@
 # Logical Replication
+##WeConsole
+
+```bash
+docker pull dpage/pgadmin4
+docker run -p 80:80 \
+        -e "PGADMIN_DEFAULT_EMAIL=user@domain.com" \
+        -e "PGADMIN_DEFAULT_PASSWORD=SuperSecret" \
+        -d dpage/pgadmin4
+```
+
 ## Node1
 
 ```bash
