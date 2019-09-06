@@ -46,6 +46,12 @@ db1=# grant ALL ON mynames to replicator;
 GRANT
 db1=# create publication mynames_pub for table mynames;
 CREATE PUBLICATION
+db1=# select slot_name,plugin,slot_type ,datoid,database,temporary,active,catalog_xmin,restart_lsn,confirmed_flush_lsn from pg_replication_slots;
+  slot_name  |  plugin  | slot_type | datoid | database | temporary | active | catalog_xmin | restart_lsn | confirmed_flush_lsn 
+-------------+----------+-----------+--------+----------+-----------+--------+--------------+-------------+---------------------
+ mynames_sub | pgoutput | logical   |  16384 | db1      | f         | t      |          580 | 0/16D08D0   | 0/16D0908
+ slot1       |          | physical  |        |          | f         | f      |              |             | 
+(2 rows)
 ```
 
 # Node2
@@ -152,5 +158,81 @@ tables will result in an error.
 2019-09-06 02:01:57.613 UTC [13989] FATAL:  password authentication failed for user "postgres"
 2019-09-06 02:01:57.613 UTC [13989] DETAIL:  User "postgres" has no password assigned.
 	Connection matched pg_hba.conf line 90: "host all all 0.0.0.0/0 md5"
+
+```
+
+You may create a password for user postgres for   the  situation.
+
+```bash
+# su - postgres -c "psql"
+
+psql (11.0)
+Type "help" for help.
+
+postgres=# \password postgres
+
+```
+
+### EXAMINING REPLICATION STATUS
+We now have two active replication slot consumers (pg_receivewal and the standby). We can check the replication status using the [pgmetrics](https://pgmetrics.io/) tool:
+
+```bash
+[vagrant@node1 ~]$ wget https://github.com/rapidloop/pgmetrics/releases/download/v1.7.0/pgmetrics_1.7.0_linux_amd64.tar.gz
+[vagrant@node1 ~]$ tar -xvf pgmetrics_1.7.0_linux_amd64.tar.gz
+[vagrant@node1 ~]$ sudo -s
+[root@node1 ~]$ cp /home/vagrant/pgmetrics_1.7.0_linux_amd64/pgmetrics /var/lib/pgsql/
+[root@node1 ~]$ chown  postgres /var/lib/pgsql/pgmetrics 
+[root@node1 ~]$ su - postgres
+-bash-4.2$ ./pgmetrics -h /tmp --no-password postgres
+...snip...
+Outgoing Replication Stats:
+    Destination #1:
+      User:              replicator
+      Application:       mynames_sub
+      Client Address:    100.100.100.102/32
+      State:             streaming
+      Started At:        6 Sep 2019 3:47:40 AM (1 minute ago)
+      Sent LSN:          0/16D0908
+      Written Until:     0/16D0908 (no write lag)
+      Flushed Until:     0/16D0908 (no flush lag)
+      Replayed Until:    0/16D0908 (no replay lag)
+      Sync Priority:     0
+      Sync State:        async
+
+Physical Replication Slots:
+    +-------+--------+---------------+-------------+-----------+
+    |  Name | Active | Oldest Txn ID | Restart LSN | Temporary |
+    +-------+--------+---------------+-------------+-----------+
+    | slot1 |     no |               |             |        no |
+    +-------+--------+---------------+-------------+-----------+
+
+Logical Replication Slots:
+    +-------------+----------+----------+--------+---------------+-------------+---------------+-----------+
+    |        Name |   Plugin | Database | Active | Oldest Txn ID | Restart LSN | Flushed Until | Temporary |
+    +-------------+----------+----------+--------+---------------+-------------+---------------+-----------+
+    | mynames_sub | pgoutput |      db1 |    yes |               |   0/16D08D0 |     0/16D0908 |        no |
+    +-------------+----------+----------+--------+---------------+-------------+---------------+-----------+
+
+WAL Files:
+    WAL Archiving?       no
+    WAL Files:           1
+    +--------------------+---------------+
+    |            Setting |         Value |
+    +--------------------+---------------+
+    |          wal_level |       logical |
+    |    archive_timeout |             0 |
+    |    wal_compression |           off |
+    |       max_wal_size | 1024 (16 GiB) |
+    |       min_wal_size |  80 (1.3 GiB) |
+    | checkpoint_timeout |           300 |
+    |   full_page_writes |            on |
+    |  wal_keep_segments |             0 |
+    +--------------------+---------------+
+
+BG Writer:
+    Checkpoint Rate:     0.20 per min
+    Average Write:       4.7 KiB per checkpoint
+    Total Checkpoints:   20 sched (90.9%) + 2 req (9.1%) = 22
+    Total Write:         104 KiB, @ 16 B per sec
 
 ```
